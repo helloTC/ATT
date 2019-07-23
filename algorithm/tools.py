@@ -1176,6 +1176,38 @@ def rearrange_matrix(matrix_data, index_list):
     tmp_data = matrix_data[index_list,:]
     rag_matrix = tmp_data[:,index_list]
     return rag_matrix
+   
+   
+def ttest_bootstrap_samples(sample1, sample2):
+    """
+    Do two sample t test between samples generated from bootstrap procedure.
+    Standard error of samples from bootstrap procedure is equal to its standard deviation, which makes t-test differ from traditional method.
+    
+    Parameters:
+    ------------
+    sample1: bootstrap sample 1 
+    sample2: bootstrap sample 2
+    
+    Returns:
+    ---------
+    tval: t value
+    pval: p value
+    
+    Examples:
+    ----------
+    >>> t, p = ttest_bootstrap_samples(sample1, sample2)
+    """
+    n_sample1 = len(sample1)
+    n_sample2= len(sample2)
+    mean_sample1 = np.mean(sample1)
+    mean_sample2 = np.mean(sample2)
+    std_sample1 = np.std(sample1)
+    std_sample2 = np.std(sample2)
+    
+    poolstd = np.sqrt((n_sample1*(std_sample1**2)+n_sample2*(std_sample2**2))/(n_sample1+n_sample2-1))
+    tval = (mean_sample1 - mean_sample2)/poolstd
+    pval = stats.t.sf(np.abs(tval), n_sample1+n_sample2-2)*2
+    return tval, pval
 
 
 def anova_decomposition(Y):
@@ -1283,7 +1315,7 @@ def icc(Y, methods='(1,1)'):
         Z = np.kron(np.eye(n_targs), np.ones((n_judges,1)))
         y = Y.reshape((N,1))
         # Estimate variance components using ReML
-        s20 = [0.001, 0.1]
+        s20 = np.array([0.001, 0.1])
         dim = [1*n_targs]
         s2, b, u, Is2, C, loglik, loops = _mixed_model(y, X, Z, dim, s20, method=2)
         r = s2[0]/np.sum(s2)
