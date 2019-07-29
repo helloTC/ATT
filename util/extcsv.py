@@ -16,8 +16,8 @@ class OperateCSV(object):
         data: csv file data path or pd.DataFrame
         """
         if isinstance(data, str):
-            assert datapath.endswith('csv'), "a .csv file should be inputed"
-            self.rawdata = pd.read_csv(datapath)
+            assert data.endswith('csv'), "a .csv file should be inputed"
+            self.rawdata = pd.read_csv(data)
         elif isinstance(data, pd.DataFrame):
             self.rawdata = data
         else:
