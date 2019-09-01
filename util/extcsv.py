@@ -114,7 +114,8 @@ class OperateCSV(object):
         Parameters:
         ------------
         key: a string. key name of data
-
+        data: operate new dataframe or not
+ 
         Return:
         -------
         unique_data: unique list data
@@ -127,4 +128,29 @@ class OperateCSV(object):
             data = self.rawdata
         return np.unique(data[key]).tolist()
 
+    def reorder_by_list(self, datalist, key, data=None):
+        """
+        Reorder pandas dataframe by a datalist which correspond to the key.
+
+        Parameters:
+        -----------
+        datalist: template list for data[key] should be.
+        key: key name of the data.
+        data: operate new dataframe or not.
+
+        Return:
+        -------
+        reorder_data: reordered data
+
+        Examples:
+        ---------
+        >>> reorder_by_list(subjectID, 'Subject', data=origin_pd)
+        """
+        if data is None:
+            data = self.rawdata
+        data.reset_index(drop=True,inplace=True)
+        ord_idx = []
+        for sid in datalist:
+            ord_idx.append(data[key].tolist().index(sid))
+        return data.reindex(ord_idx)
 
