@@ -5,6 +5,7 @@ import numpy as np
 from . import tools
 import copy
 import random
+from functools import partial
 
 def get_masksize(mask, labelnum = None):
     """
@@ -36,67 +37,46 @@ def get_masksize(mask, labelnum = None):
         masksize.append(0)
     return np.array(masksize)
     
-def get_signals(atlas, mask, thr = None, method = 'mean', labelnum = None):
+    
+def get_signals(atlas, mask, roilabels, method = 'mean'):
     """
-    Extract roi signals of atlas from mask
+    Extract brain activation from ROI
     
     Parameters:
-    -----------
-    atlas: atlas
-    mask: mask, a label image
-    thr: extract values over the threshold. If set thr as None, no threshold was used.
-    method: 'mean', 'std', 'ste', 'max', 'vertex', etc.
-    labelnum: mask's label numbers, add this parameters for group analysis
-
-    Return:
-    -------
-    signals: signals of specific roi
+    ------------
+    brainimg[array]: A 4D brain image array with the first dimension correspond to timeseries and the rest 3D correspond to brain images
+    mask[array]: A 3D brain image array with the same size as the rest 3D of brainimg.
+    roilabels[list/array]: ROI labels
+    method[str]: method to integrate activation from each ROI, by default is 'mean'.
+    
+    Returns:
+    ---------
+    roisignals[list]: Extracted brain activation. 
+                      Each element in the list is the extracted activation of the roilabels.
+                      Due to different label may contain different number of activation voxels, 
+                      the output activation could not stored as numpy array list.
    
     Example:
     -------
-    >>> signals = get_signals(atlas, mask, 'mean')
+    >>> signals = get_signals(atlas, mask, [1,2,3,4], 'mean')
     """
-    if atlas.ndim == 3:
-        atlas = atlas[:,0,0]
-    if mask.ndim == 3:
-        mask = mask[:,0,0]        
-    labels = np.unique(mask)[1:]
-    if labelnum is None:
-        try:
-            labelnum = int(np.max(labels))
-        except ValueError as e:
-            print('value in mask are all zeros')
-            labelnum = 1
     if method == 'mean':
-        calfunc = np.nanmean
+        calc_way = partial(np.mean, axis=1)
     elif method == 'std':
-        calfunc = np.nanstd
+        calc_way = partial(np.std, axis=1)
     elif method == 'max':
-        calfunc = np.max
-    elif method == 'vertex':
-        calfunc = np.array
-    elif method == 'ste':
-        calfunc = tools.ste
+        calc_way = partial(np.max, axis=1)
+    elif method == 'voxel':
+        calc_way = np.array
     else:
-        raise Exception('Miss paramter of method')
-    signals = []
-    for i in range(labelnum):
-        if np.any(mask==i+1):
-            tmp_signals = atlas[mask==i+1]
-            if thr is not None:
-                signals.append(tmp_signals[tmp_signals>thr])
-            else:
-                signals.append(tmp_signals.flatten())
-        else:
-            signals.append(np.array([np.nan]))
-    if atlas.ndim == mask.ndim+1:
-        # time series
-        if calfunc != np.array:
-            return [calfunc(sg, axis=0) for sg in signals]
-        else:
-            return [calfunc(sg) for sg in signals]
-    else:
-        return [calfunc(sg) for sg in signals]
+        raise Exception('We haven''t support this method, please contact authors to implement.')
+    
+    assert atlas.shape[1:] == mask.shape, "atlas and mask are mismatched."
+    roisignals = []    
+    for i, lbl in enumerate(roilabels):
+        roisignals.append(calc_way(atlas[:,mask==lbl]))
+    return roisignals
+
 
 def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
     """
