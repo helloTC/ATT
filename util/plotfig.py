@@ -87,6 +87,8 @@ class _FigureFactory(object):
             figuror = figure._radar_plotting
         elif figuretype == 'montage':
             figuror = figure._montage_plotting
+        elif figuretype == 'text':
+            figuror = figure._text_plotting
         else:
               raise Exception('wrong parameter input!')
         return figuror
@@ -480,10 +482,38 @@ class _FigureFactory(object):
             if self._isshow is True:
                 plt.show()
 
+        def _text_plotting(self, words, weights, locations, wordborder=20, scale_range=0.15):    
+            """
+            Plot text with specific weights and locations in subplots
 
+            Parameters:
+            -----------
+            words[list/np.array]: words list
+            weights[list/np.array]: weights of each word
+            locations[list/np.array]: locations with each element contains x and y.
+            """
+            assert len(words) == len(weights) == len(locations), 'Length mismatched.'
+            rescale_x = lambda x,valmin,valmax: valmin+((valmax-valmin)*(x-np.min(x))/(np.max(x)-np.min(x)))
+            weights_rescale = rescale_x(weights,0,1)
+            lowweight_lbl = np.argsort(weights)[:-wordborder]
+            highweight_lbl = np.argsort(weights)[-wordborder:]
+            weights_rescale[lowweight_lbl] = rescale_x(weights_rescale[lowweight_lbl],0,scale_range)
+            weights_rescale[highweight_lbl] = rescale_x(weights_rescale[highweight_lbl],scale_range,1)
 
+            fig = plt.figure()
+            ax = fig.add_subplot(1,1,1)
+            ax.spines['left'].set_position('center')
+            ax.spines['bottom'].set_position('center')
+            ax.spines['right'].set_color('none')
+            ax.spines['top'].set_color('none')
 
+            location_diff = np.max(locations) - np.min(locations)
+            ax.set_xticks(np.arange(np.min(locations)-location_diff/3,np.max(locations)+location_diff/3,location_diff/10))
+            ax.set_xticklabels([])
+            ax.set_yticks(np.arange(np.min(locations)-0.5,np.max(locations)+0.5,location_diff/10))
+            ax.set_yticklabels([])
 
-
-
-
+            wordnum = len(words)
+            for i in range(wordnum):
+                plt.text(locations[i][0], locations[i][1], (words[i]), fontsize=weights_rescale[i]*50, alpha=weights_rescale[i])
+            plt.show()
