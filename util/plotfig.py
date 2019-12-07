@@ -7,6 +7,19 @@ from scipy import stats
 import numpy as np
 from scipy.cluster.hierarchy import linkage, dendrogram
 
+
+def _plot_rectangle(frameloc, color='k', linewidth=1):
+        """
+        Plot rectangle as a supplementary method for plotmat.
+        """
+        length = frameloc[1] - frameloc[0]
+        plt.plot(length*[frameloc[0]], np.arange(*frameloc), color=color, linewidth=linewidth)
+        plt.plot(length*[frameloc[1]], np.arange(*frameloc), color=color, linewidth=linewidth)
+        plt.plot(np.arange(*frameloc), length*[frameloc[0]], color=color, linewidth=linewidth)
+        plt.plot(np.arange(*frameloc), length*[frameloc[1]], color=color, linewidth=linewidth)
+
+
+
 def make_figfunction(figuretype, isshow = True):
     """
     A function to pack figure factory, make it easier to use
@@ -142,20 +155,30 @@ class _FigureFactory(object):
             if self._isshow is True:
                 plt.show()
 
-        def _mat_plotting(self, data, xlabel='', ylabel='', cmap = 'jet'):
+        def _mat_plotting(self, data, rectangle=None, xlabel=[], ylabel=[], cmap = 'jet'):
             """
             Plot matrix using heatmap
             ------------------------------------
             Paramters:
                 data: raw data
+                rectangle: whether to plot rectangle
+                           if it's true, please input [(min,max), (), ...] to determine its location
                 xlabel: xlabels
                 ylabel: ylabels
+                cmap: color map
             Example:
                 >>> plotmat(data, xlabel = xlabellist, ylabel = ylabellist)
             """
-            sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel, cmap=cmap)
+            plt.imshow(data, cmap=cmap)
+            plt.colorbar()
+            plt.xticks(xlabel)
+            plt.yticks(ylabel)
+            if rectangle is not None:
+                for rt_loc in rectangle:
+                    _plot_rectangle(rt_loc)
             if self._isshow is True:
                 plt.show()
+
 
         def _bar_plotting(self, data, title = '', xlabels = '', ylabels = '', legendname = None, legendpos = 'upper left', rotation = 'vertical', err=None):
             """
